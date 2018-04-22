@@ -21,11 +21,16 @@ http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/cu
 <http:listener config-ref="HTTP_Listener_Configuration" path="/hello" doc:name="HTTP" allowedMethods="GET"/>
 <flow-ref name="subflow1" doc:name="subflow1"/>
 <flow-ref name="subflow2" doc:name="subflow2"/>
+        <flow-ref name="subflow3" doc:name="Flow Reference"/>
 <logger level="INFO" doc:name="Logger" message="Name: #[message.outboundProperties.qpname] Type: #[flowVars.qptype] Color: #[sessionVars.color]"/>
 <catch-exception-strategy doc:name="Catch Exception Strategy">
 <set-payload value="Error while processing the message" doc:name="Set Payload"/>
 </catch-exception-strategy>
 </flow>
+    <flow name="subflow3">
+        <set-payload value="#[message.payload]" doc:name="Set Payload"/>
+        <logger message="gfhgfhgc" level="INFO" doc:name="Logger"/>
+    </flow>
 <sub-flow name="subflow1">
 <set-payload value="#['Hello World'.toUpperCase()]" doc:name="Set Payload"/>
 <set-property propertyName="qpname" value="#[message.inboundProperties.'http.query.params'.name]" doc:name="Property"/>
