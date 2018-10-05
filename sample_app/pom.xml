@@ -73,8 +73,6 @@
 		<workerType>Micro</workerType>
 		<redeploy>true</redeploy>
 		<environment>Sandbox</environment>
-		<application>sample_app</application>
-		<applicationName>sample_app</applicationName>
 	</configuration>
 	<executions>
 		<execution>
