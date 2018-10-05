@@ -174,7 +174,8 @@
     </dependencies>
 
 	<repositories>
-	<repository>
+		<!--public-->
+<repository>
     <id>Nexus</id>
     <name>Nexus Public Repository</name>
     <url>https://repository-master.mulesoft.org/nexus/content/groups/public/</url>
