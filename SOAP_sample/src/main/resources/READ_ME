@@ -1,0 +1,144 @@
+JAX-WS Example:-
+*************************************************************************************************************
+Now that we have gone through the web services terminologies, let’s go ahead and create a JAX-WS web service. We will create a web service that will expose methods to add, delete and get person objects. So first of all we will create a model bean for our data.
+
+-------------------------------------------------------------------------------------------------------------
+Person.java
+_________________________________________________________________
+package jms_sample;
+
+import java.io.Serializable;
+
+public class Person implements Serializable{
+
+	private static final long serialVersionUID = -5577579081118070434L;
+	
+	private String name;
+	private int age;
+	private int id;
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public int getAge() {
+		return age;
+	}
+
+	public void setAge(int age) {
+		this.age = age;
+	}
+
+	public int getId() {
+		return id;
+	}
+
+	public void setId(int id) {
+		this.id = id;
+	}
+	
+	@Override
+	public String toString(){
+		return id+"::"+name+"::"+age;
+	}
+
+}
+__________________________________________________________________________________________________
+Now we will have to create an interface where we will declare the methods we will expose in our JAX-WS example web services.
+-----------------------------------------------------------------------------------------------------------------
+PersonService.java
+_________________________________________
+
+
+package jms_sample;
+
+import javax.jws.WebMethod;
+import javax.jws.WebService;
+import javax.jws.soap.SOAPBinding;
+
+
+@WebService
+@SOAPBinding(style = SOAPBinding.Style.RPC)
+public interface PersonService {
+
+	@WebMethod
+	public boolean addPerson(Person p);
+	
+	@WebMethod
+	public boolean deletePerson(int id);
+	
+	@WebMethod
+	public Person getPerson(int id);
+	
+	@WebMethod
+	public Person[] getAllPersons();
+}
+_____________________________________________________________________________
+Notice the use of @WebService and @SOAPBinding annotations from JAX-WS API. We can create SOAP web services in RPC style or Document style. We can use any of these styles to create web services, the different is seen in the way WSDL file is generated.
+
+Now we will write the implementation class as shown below.
+----------------------------------------------------------------------------------------------------
+PersonServiceImpl.java
+______________________________________________________________
+
+package jms_sample;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
+import javax.jws.WebService;
+
+import com.journaldev.jaxws.beans.Person;
+
+@WebService(endpointInterface = "com.journaldev.jaxws.service.PersonService")  
+public class PersonServiceImpl implements PersonService {
+
+	private static Map<Integer,Person> persons = new HashMap<Integer,Person>();
+	
+	@Override
+	public boolean addPerson(Person p) {
+		if(persons.get(p.getId()) != null) return false;
+		persons.put(p.getId(), p);
+		return true;
+	}
+
+	@Override
+	public boolean deletePerson(int id) {
+		if(persons.get(id) == null) return false;
+		persons.remove(id);
+		return true;
+	}
+
+	@Override
+	public Person getPerson(int id) {
+		return persons.get(id);
+	}
+
+	@Override
+	public Person[] getAllPersons() {
+		Set<Integer> ids = persons.keySet();
+		Person[] p = new Person[ids.size()];
+		int i=0;
+		for(Integer id : ids){
+			p[i] = persons.get(id);
+			i++;
+		}
+		return p;
+	}
+
+}
+______________________________________________________________________________________________________________
+
+
+
+
+
+
+*****************************************************************************************************
+CXF_COMPONENT:-
+
+In CXF-component we need to define Interface code(where we have WebMethods) and in java we need to define java class(which have webServices) 
