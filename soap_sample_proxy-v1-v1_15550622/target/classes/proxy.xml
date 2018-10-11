@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:context="http://www.springframework.org/schema/context" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core"
+    xmlns:http="http://www.mulesoft.org/schema/mule/http"
+    xmlns:cxf="http://www.mulesoft.org/schema/mule/cxf"
+    xmlns:spring="http://www.springframework.org/schema/beans"
+    xmlns:expression-language="http://www.mulesoft.org/schema/mule/expression-language-gw"
+    xmlns:api-platform-gw="http://www.mulesoft.org/schema/mule/api-platform-gw"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/cxf http://www.mulesoft.org/schema/mule/cxf/current/mule-cxf.xsd
+http://www.mulesoft.org/schema/mule/expression-language-gw http://www.mulesoft.org/schema/mule/expression-language-gw/current/mule-expression-language-gw.xsd
+http://www.mulesoft.org/schema/mule/api-platform-gw http://www.mulesoft.org/schema/mule/api-platform-gw/current/mule-api-platform-gw.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-current.xsd">
+
+    <configuration defaultProcessingStrategy="non-blocking" doc:name="Configuration"/>
+
+    <http:listener-config name="http-lc-0.0.0.0-8081" host="0.0.0.0" port="${proxy.port}" doc:name="HTTP Listener Configuration"/>
+
+    <http:request-config
+      name="http-request-config"
+      host="soap-sample.us-e2.cloudhub.io"
+      port="80" doc:name="HTTP Request Configuration"/>
+
+    <api-platform-gw:api apiName="${api.name}" version="${api.version}" flowRef="proxy" create="true" doc:name="API Autodiscovery">
+    </api-platform-gw:api>
+    <context:property-placeholder location="config.properties"/>
+
+    <flow name="proxy">
+        <http:listener config-ref="http-lc-0.0.0.0-8081" path="${proxy.path}" parseRequest="false" doc:name="HTTP"/>
+        <set-session-variable variableName="originalContentType" value="#[message.inboundProperties['Content-Type']]" doc:name="Session Variable"/>
+        <cxf:proxy-service port="PersonService"
+                           namespace="http://jms_sample/"
+                           service="PersonServiceService"
+                           payload="envelope" enableMuleSoapHeaders="false"
+                           soapVersion="1.2"
+                           wsdlLocation="![p['wsdl.uri']]" doc:name="CXF">
+            <cxf:features>
+                <spring:bean class="org.mule.module.cxf.feature.ProxyGZIPFeature"/>
+            </cxf:features>
+        </cxf:proxy-service>
+        <custom-processor class="com.mulesoft.gateway.extension.ProxyRequestHeadersProcessor" doc:name="Custom Processor"/>
+        <cxf:proxy-client payload="envelope" enableMuleSoapHeaders="false" soapVersion="1.2" doc:name="CXF">
+            <cxf:features>
+                <spring:bean class="org.mule.module.cxf.feature.ProxyGZIPFeature"/>
+            </cxf:features>
+        </cxf:proxy-client>
+        <set-property propertyName="Content-Type" value="#[sessionVars['originalContentType']]" doc:name="Property"/>
+        <http:request config-ref="http-request-config" path="/soap_sample" method="POST" parseResponse="false" doc:name="HTTP">
+            <http:success-status-code-validator values="0..599" />
+        </http:request>
+        <custom-processor class="com.mulesoft.gateway.extension.ProxyResponseHeadersProcessor" doc:name="Custom Processor"/>
+        <choice-exception-strategy doc:name="Choice Exception Strategy">
+            <catch-exception-strategy when="#[exception instanceof org.mule.api.MessagingException &amp;&amp; exception.causedExactlyBy(java.util.concurrent.TimeoutException)]" doc:name="Catch Exception Strategy">
+                <set-property propertyName="http.status" value="504" doc:name="Property"/>
+                <set-payload value="Gateway timeout" doc:name="Set Payload"/>
+            </catch-exception-strategy>
+        </choice-exception-strategy>
+    </flow>
+</mule>
