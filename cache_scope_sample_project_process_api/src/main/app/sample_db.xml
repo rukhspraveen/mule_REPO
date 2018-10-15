@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+    <http:listener-config name="HTTP_Listener_Configuration" host="localhost" port="8081" doc:name="HTTP Listener Configuration"/>
+    <db:mysql-config name="MySQL_Configuration" host="localhost" port="3306" user="root" password="Miracle@1" database="sakila" doc:name="MySQL Configuration"/>
+    <ee:object-store-caching-strategy name="Caching_Strategy"  doc:name="Caching Strategy">
+        <in-memory-store name="inMemoryStore" maxEntries="200" entryTTL="20000" expirationInterval="2000000"/>
+    </ee:object-store-caching-strategy>
+    <http:request-config name="HTTP_Request_Configuration" host="localhost" port="8082" doc:name="HTTP Request Configuration"/>
+    <flow name="sample_dbFlow">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/db" allowedMethods="GET" doc:name="HTTP"/>
+        <logger message="#[&quot;started&quot;]" level="INFO" doc:name="Logger"/>
+        <set-variable variableName="actor_id" value="#[message.inboundProperties.'http.query.params'.actor_id]" doc:name="Variable"/>
+        <enricher target="flowVars.OriginalPayload" doc:name="Message Enricher">
+           <!--  <processor-chain doc:name="Processor Chain"> -->
+                <ee:cache cachingStrategy-ref="Caching_Strategy" doc:name="Cache">
+                    <logger message="before calling" level="INFO" doc:name="Logger"/>
+                    <db:select config-ref="MySQL_Configuration" doc:name="Database">
+                        <db:dynamic-query><![CDATA[select * from actor]]></db:dynamic-query>
+                    </db:select>
+                    <logger message="after calling" level="INFO" doc:name="Logger"/>
+                </ee:cache>
+          <!--   </processor-chain> -->
+        </enricher>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+flowVars.OriginalPayload filter ((flowVars.actor_id as :number) == $.actor_id) 
+]]></dw:set-payload>
+            <dw:set-variable variableName="sample"><![CDATA[%dw 1.0
+%output application/json
+%var input =flowVars.OriginalPayload
+---
+input.actor_id]]></dw:set-variable>
+        </dw:transform-message>
+        <logger message="#[message.payload]" level="INFO" doc:name="Logger"/>
+
+    </flow>
+</mule>

@@ -1,0 +1,13 @@
+actor_id: payload.actor_id,
+	first_name: payload.first_name,
+	last_name: payload.last_name,
+	last_update: payload.last_update
+	
+	------------------
+	payload map ((payload01 , indexOfPayload01) -> {
+actor_id: payload01.actor_id,
+first_name: payload01.first_name,
+last_name: payload01.last_name,
+(last_update: payload.last_update )
+})
+	
