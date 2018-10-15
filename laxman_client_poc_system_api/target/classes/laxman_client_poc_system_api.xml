@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+    <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration"/>
+    <db:mysql-config name="MySQL_Configuration" host="localhost" port="3306" user="root" database="rukhs" doc:name="MySQL Configuration" password="root"/>
+    <flow name="jde_requestFlow">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/JDE" allowedMethods="POST" doc:name="HTTP"/>
+        <set-payload value="#[message.payload]" doc:name="Set Payload"/>
+         <json:json-to-object-transformer returnClass="java.util.List" doc:name="JSON to Object"/>
+        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+   <foreach doc:name="For Each" collection="#[message.payload]">
+      <json:object-to-json-transformer doc:name="Object to JSON"/>
+      <logger message=" #[payload]" level="INFO" doc:name="Logger"/>
+            <db:insert config-ref="MySQL_Configuration" doc:name="Database">
+                <db:dynamic-query><![CDATA[insert into jde_mule (SYEKCO,SYEDOC,SYEDLN,SYEDST,SYEDDT,SYEDBT,SYPNID,SYKCOO,SYDOCO,SYDCTO,SYDEL1,SYDEL2,SYPTC,SYCRCD,SYFAP,SYUSER,SYPID,SYPSTM,SYEXDT0,SYEXDT1,SYEXDT2,SYPOHP01)values(#[dw("payload.SYEKCO","application/json")],#[dw("payload.SYEDOC","application/json")],#[dw("payload.SYEDLN","application/json")],#[dw("payload.SYEDST","application/json")],#[dw("payload.SYEDDT","application/json")],#[dw("payload.SYEDBT","application/json")],#[dw("payload.SYPNID","application/json")],#[dw("payload.SYKCOO","application/json")],#[dw("payload.SYDOCO","application/json")],#[dw("payload.SYDCTO","application/json")],#[dw("payload.SYDEL1","application/json")],#[dw("payload.SYDEL2","application/json")],#[dw("payload.SYPTC","application/json")],#[dw("payload.SYCRCD","application/json")],#[dw("payload.SYFAP","application/json")],#[dw("payload.SYUSER","application/json")],#[dw("payload.SYPID","application/json")],#[dw("payload.SYPSTM","application/json")],#[dw("payload.SYEXDT0","application/json")],#[dw("payload.SYEXDT1","application/json")],#[dw("payload.SYEXDT2","application/json")],#[dw("payload.SYPOHP01","application/json")])]]></db:dynamic-query>
+            </db:insert>
+    </foreach>
+      
+        <logger message="'Success'+ #[payload]" level="INFO" doc:name="Logger"/>
+    </flow>
+</mule>
