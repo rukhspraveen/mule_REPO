@@ -70,7 +70,7 @@
               <configuration>
                  <deploymentType>cloudhub</deploymentType>
                  <muleVersion>${mule.version}</muleVersion>
-                 <username>Rukhss</username>
+                 <username>RukhsarPS</username>
                  <password>Rabianoor@1</password>
                  <workerType>Micro</workerType>
                  <redeploy>true</redeploy>
