@@ -70,8 +70,8 @@
               <configuration>
                  <deploymentType>cloudhub</deploymentType>
                  <muleVersion>${mule.version}</muleVersion>
-                 <username>RukhsarPS</username>
-                 <password>Rabianoor@1</password>
+                 <username>abc</username>
+                 <password>abc@1</password>
                  <workerType>Micro</workerType>
                  <redeploy>true</redeploy>
                  <environment>Sandbox</environment>
